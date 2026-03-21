@@ -1,0 +1,123 @@
+# kubernetes/llm/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu
+                operator: Exists
+      initContainers:
+      - name: download-model
+        image: curlimages/curl:8.7.1
+        resources:
+          requests:
+            cpu: "500m"
+            memory: 512Mi
+          limits:
+            cpu: "500m"
+            memory: 512Mi
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          DEST="/models-import/Qwen3.5-9B-Q4_K_M.gguf"
+          if [ -f "$DEST" ]; then
+            echo "Model already downloaded, skipping."
+            exit 0
+          fi
+          echo "Downloading model..."
+          curl -fL -o "${DEST}.tmp" "https://huggingface.co/unsloth/Qwen3.5-9B-GGUF/resolve/main/Qwen3.5-9B-Q4_K_M.gguf?download=true"
+          mv "${DEST}.tmp" "$DEST"
+          echo "Download complete."
+        volumeMounts:
+        - name: models
+          mountPath: /models-import
+          subPath: import
+      containers:
+      - name: ollama
+        image: ollama/ollama:0.18.2
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          ollama serve &
+          OLLAMA_PID=$!
+          echo "Waiting for Ollama server..."
+          until ollama list > /dev/null 2>&1; do
+            kill -0 $OLLAMA_PID 2>/dev/null || { echo "ollama serve exited unexpectedly"; exit 1; }
+            sleep 2
+          done
+          echo "Registering model..."
+          ollama list | grep -q qwen3.5 || ollama create qwen3.5 -f /modelfile/Modelfile
+          echo "Model ready. Server running."
+          wait $OLLAMA_PID
+        env:
+        - name: OLLAMA_MODELS
+          value: /ollama-models
+        ports:
+        - containerPort: 11434
+          name: http
+        resources:
+          requests:
+            cpu: "2"
+            memory: 8Gi
+            nvidia.com/gpu: "1"
+          limits:
+            cpu: "2"
+            memory: 8Gi
+            nvidia.com/gpu: "1"
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - "ollama list | grep -q qwen3.5"
+          initialDelaySeconds: 120
+          periodSeconds: 15
+          failureThreshold: 40
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /api/tags
+            port: 11434
+          initialDelaySeconds: 60
+          periodSeconds: 15
+          failureThreshold: 40
+          timeoutSeconds: 5
+        volumeMounts:
+        - name: models
+          mountPath: /models-import
+          subPath: import
+        - name: models
+          mountPath: /ollama-models
+          subPath: registry
+        - name: modelfile
+          mountPath: /modelfile
+      volumes:
+      - name: models
+        persistentVolumeClaim:
+          claimName: ollama-models
+      - name: modelfile
+        configMap:
+          name: ollama-modelfile

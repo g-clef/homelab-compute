@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ollama-modelfile
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+data:
+  Modelfile: |
+    FROM /models-import/Qwen3.5-9B-Q4_K_M.gguf
