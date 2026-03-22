@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ollama-models
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: minio-nfs
+  claimRef:
+    namespace: llm
+    name: ollama-models
+  mountOptions:
+    - nfsvers=4.1
+  nfs:
+    path: /volume1/minio/ollama-models
+    server: 192.168.1.197
