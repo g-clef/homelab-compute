@@ -1,0 +1,22 @@
+# kubernetes/llm/open-webui-pv.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: open-webui-data
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: minio-nfs
+  claimRef:
+    namespace: llm
+    name: open-webui-data
+  mountOptions:
+    - nfsvers=4.1
+  nfs:
+    path: /volume1/minio/open-webui-data
+    server: 192.168.1.197

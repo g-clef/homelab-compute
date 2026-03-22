@@ -11,6 +11,10 @@ resources:
   - configmap.yaml
   - deployment.yaml
   - service.yaml
+  - open-webui-pv.yaml
+  - open-webui-pvc.yaml
+  - open-webui-deployment.yaml
+  - open-webui-service.yaml
 
 labels:
   - pairs:

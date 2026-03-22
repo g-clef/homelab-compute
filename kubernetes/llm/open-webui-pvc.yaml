@@ -1,0 +1,15 @@
+# kubernetes/llm/open-webui-pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: open-webui-data
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: minio-nfs
+  resources:
+    requests:
+      storage: 5Gi

@@ -1,0 +1,17 @@
+# kubernetes/llm/open-webui-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: open-webui
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    metallb.universe.tf/loadBalancerIPs: "192.168.1.206"
+spec:
+  selector:
+    app: open-webui
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+  type: LoadBalancer
