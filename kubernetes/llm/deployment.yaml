@@ -23,8 +23,10 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-              - key: nvidia.com/gpu
-                operator: Exists
+              - key: accelerator
+                operator: In
+                values:
+                - nvidia
       initContainers:
       - name: download-model
         image: curlimages/curl:8.7.1
