@@ -6,6 +6,7 @@ metadata:
   namespace: llm
   annotations:
     argocd.argoproj.io/sync-wave: "2"
+    metallb.universe.tf/loadBalancerIPs: "192.168.1.205"
 spec:
   selector:
     app: ollama
@@ -13,4 +14,4 @@ spec:
   - name: http
     port: 11434
     targetPort: 11434
-  type: ClusterIP
+  type: LoadBalancer
