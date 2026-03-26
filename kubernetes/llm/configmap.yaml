@@ -8,3 +8,4 @@ metadata:
 data:
   Modelfile: |
     FROM /models-import/Qwen3.5-9B-Q4_K_M.gguf
+    PARAMETER num_ctx 16384
