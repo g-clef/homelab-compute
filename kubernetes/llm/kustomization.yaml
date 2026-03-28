@@ -8,7 +8,7 @@ resources:
   - namespace.yaml
   - pv.yaml
   - pvc.yaml
-  - deployment.yaml
+  # - deployment.yaml
   - service.yaml
   - open-webui-pv.yaml
   - open-webui-pvc.yaml
