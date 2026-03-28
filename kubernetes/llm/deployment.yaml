@@ -34,10 +34,10 @@ spec:
         resources:
           requests:
             cpu: "500m"
-            memory: 2Gi
+            memory: 512Mi
           limits:
             cpu: "500m"
-            memory: 2Gi
+            memory: 512Mi
         command:
         - /bin/sh
         - -c
@@ -49,10 +49,39 @@ spec:
             echo "Model already downloaded, skipping."
             exit 0
           fi
-          echo "Installing huggingface_hub..."
-          pip install -q "huggingface_hub==1.8.0"
+          mkdir -p "$DEST"
           echo "Downloading model..."
-          python -c "from huggingface_hub import snapshot_download; snapshot_download('QuantTrio/Qwen3.5-9B-AWQ', local_dir='$DEST')"
+          python3 /dev/stdin <<'PYEOF'
+          import urllib.request, json, os, sys
+
+          dest = '/models/Qwen3.5-9B-AWQ'
+          repo = 'QuantTrio/Qwen3.5-9B-AWQ'
+
+          print('Fetching file list...', flush=True)
+          req = urllib.request.Request(
+              f'https://huggingface.co/api/models/{repo}',
+              headers={'User-Agent': 'python-urllib/3.11'}
+          )
+          with urllib.request.urlopen(req) as r:
+              siblings = json.load(r).get('siblings', [])
+
+          for s in siblings:
+              fname = s['rfilename']
+              fpath = os.path.join(dest, fname)
+              os.makedirs(os.path.dirname(fpath) or dest, exist_ok=True)
+              print(f'Downloading {fname}...', flush=True)
+              req = urllib.request.Request(
+                  f'https://huggingface.co/{repo}/resolve/main/{fname}',
+                  headers={'User-Agent': 'python-urllib/3.11'}
+              )
+              with urllib.request.urlopen(req) as r, open(fpath, 'wb') as f:
+                  while True:
+                      chunk = r.read(1024 * 1024)
+                      if not chunk:
+                          break
+                      f.write(chunk)
+          print('All files downloaded.', flush=True)
+          PYEOF
           touch "$SENTINEL"
           echo "Download complete."
         volumeMounts:
