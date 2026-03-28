@@ -43,7 +43,7 @@ spec:
         - -c
         - |
           set -e
-          DEST="/models/Qwen3.5-9B-AWQ-4bit"
+          DEST="/models/Qwen3.5-9B-AWQ"
           if [ -f "$DEST/config.json" ]; then
             echo "Model already downloaded, skipping."
             exit 0
@@ -51,7 +51,7 @@ spec:
           echo "Installing huggingface_hub..."
           pip install -q "huggingface_hub==1.8.0"
           echo "Downloading model..."
-          python -c "from huggingface_hub import snapshot_download; snapshot_download('cyankiwi/Qwen3.5-9B-AWQ-4bit', local_dir='$DEST')"
+          python -c "from huggingface_hub import snapshot_download; snapshot_download('QuantTrio/Qwen3.5-9B-AWQ', local_dir='$DEST')"
           echo "Download complete."
         volumeMounts:
         - name: models
@@ -61,7 +61,9 @@ spec:
         image: vllm/vllm-openai:v0.18.0
         args:
         - --model
-        - /models/Qwen3.5-9B-AWQ-4bit
+        - /models/Qwen3.5-9B-AWQ
+        - --quantization
+        - awq
         - --max-model-len
         - "8192"
         - --gpu-memory-utilization
