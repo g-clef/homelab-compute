@@ -43,7 +43,7 @@ spec:
         - -c
         - |
           set -e
-          DEST="/models/Qwen3.5-9B-AWQ"
+          DEST="/models/Qwen3.5-4B-AWQ"
           SENTINEL="$DEST/.download_complete"
           if [ -f "$SENTINEL" ]; then
             echo "Model already downloaded, skipping."
@@ -54,8 +54,8 @@ spec:
           python3 /dev/stdin <<'PYEOF'
           import urllib.request, json, os, sys
 
-          dest = '/models/Qwen3.5-9B-AWQ'
-          repo = 'QuantTrio/Qwen3.5-9B-AWQ'
+          dest = '/models/Qwen3.5-4B-AWQ'
+          repo = 'QuantTrio/Qwen3.5-4B-AWQ'
 
           print('Fetching file list...', flush=True)
           req = urllib.request.Request(
@@ -92,16 +92,13 @@ spec:
         image: vllm/vllm-openai:v0.18.0
         args:
         - --model
-        - /models/Qwen3.5-9B-AWQ
+        - /models/Qwen3.5-4B-AWQ
         - --quantization
         - awq
         - --max-model-len
         - "8192"
         - --gpu-memory-utilization
         - "0.90"
-        - --cpu-offload-gb
-        - "2"
-        - --enforce-eager
         - --served-model-name
         - qwen3.5
         ports:
