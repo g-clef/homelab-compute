@@ -34,17 +34,18 @@ spec:
         resources:
           requests:
             cpu: "500m"
-            memory: 512Mi
+            memory: 2Gi
           limits:
             cpu: "500m"
-            memory: 512Mi
+            memory: 2Gi
         command:
         - /bin/sh
         - -c
         - |
           set -e
           DEST="/models/Qwen3.5-9B-AWQ"
-          if [ -f "$DEST/config.json" ]; then
+          SENTINEL="$DEST/.download_complete"
+          if [ -f "$SENTINEL" ]; then
             echo "Model already downloaded, skipping."
             exit 0
           fi
@@ -52,6 +53,7 @@ spec:
           pip install -q "huggingface_hub==1.8.0"
           echo "Downloading model..."
           python -c "from huggingface_hub import snapshot_download; snapshot_download('QuantTrio/Qwen3.5-9B-AWQ', local_dir='$DEST')"
+          touch "$SENTINEL"
           echo "Download complete."
         volumeMounts:
         - name: models
