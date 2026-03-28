@@ -99,6 +99,9 @@ spec:
         - "8192"
         - --gpu-memory-utilization
         - "0.90"
+        - --cpu-offload-gb
+        - "2"
+        - --enforce-eager
         - --served-model-name
         - qwen3.5
         ports:
