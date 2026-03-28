@@ -50,7 +50,7 @@ spec:
           echo "Installing huggingface_hub..."
           pip install -q "huggingface_hub==1.8.0"
           echo "Downloading model..."
-          huggingface-cli download cyankiwi/Qwen3.5-9B-AWQ-4bit --local-dir "$DEST"
+          python -c "from huggingface_hub import snapshot_download; snapshot_download('cyankiwi/Qwen3.5-9B-AWQ-4bit', local_dir='$DEST')"
           echo "Download complete."
         volumeMounts:
         - name: models
