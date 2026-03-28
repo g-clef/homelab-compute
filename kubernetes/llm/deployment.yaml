@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ollama
+  name: vllm
   namespace: llm
   annotations:
     argocd.argoproj.io/sync-wave: "2"
@@ -12,11 +12,11 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app: ollama
+      app: vllm
   template:
     metadata:
       labels:
-        app: ollama
+        app: vllm
     spec:
       affinity:
         nodeAffinity:
@@ -29,7 +29,7 @@ spec:
                 - nvidia
       initContainers:
       - name: download-model
-        image: curlimages/curl:8.7.1
+        image: python:3.11-slim
         resources:
           requests:
             cpu: "500m"
@@ -42,84 +42,65 @@ spec:
         - -c
         - |
           set -e
-          DEST="/models-import/Qwen3.5-9B-Q4_K_M.gguf"
-          if [ -f "$DEST" ]; then
+          DEST="/models/Qwen3.5-9B-AWQ-4bit"
+          if [ -f "$DEST/config.json" ]; then
             echo "Model already downloaded, skipping."
             exit 0
           fi
+          echo "Installing huggingface_hub..."
+          pip install -q "huggingface_hub==1.8.0"
           echo "Downloading model..."
-          curl -fL -o "${DEST}.tmp" "https://huggingface.co/unsloth/Qwen3.5-9B-GGUF/resolve/main/Qwen3.5-9B-Q4_K_M.gguf?download=true"
-          mv "${DEST}.tmp" "$DEST"
+          huggingface-cli download cyankiwi/Qwen3.5-9B-AWQ-4bit --local-dir "$DEST"
           echo "Download complete."
         volumeMounts:
         - name: models
-          mountPath: /models-import
-          subPath: import
+          mountPath: /models
       containers:
-      - name: ollama
-        image: ollama/ollama:0.18.2
-        command:
-        - /bin/sh
-        - -c
-        - |
-          set -e
-          ollama serve &
-          OLLAMA_PID=$!
-          echo "Waiting for Ollama server..."
-          until ollama list > /dev/null 2>&1; do
-            kill -0 $OLLAMA_PID 2>/dev/null || { echo "ollama serve exited unexpectedly"; exit 1; }
-            sleep 2
-          done
-          echo "Registering model..."
-          ollama list | grep -q qwen3.5 || ollama create qwen3.5 -f /modelfile/Modelfile
-          echo "Model ready. Server running."
-          wait $OLLAMA_PID
-        env:
-        - name: OLLAMA_MODELS
-          value: /ollama-models
+      - name: vllm
+        image: vllm/vllm-openai:v0.18.0
+        args:
+        - --model
+        - /models/Qwen3.5-9B-AWQ-4bit
+        - --quantization
+        - awq
+        - --max-model-len
+        - "8192"
+        - --gpu-memory-utilization
+        - "0.90"
+        - --served-model-name
+        - qwen3.5
         ports:
-        - containerPort: 11434
+        - containerPort: 8000
           name: http
         resources:
           requests:
-            cpu: "2"
-            memory: 8Gi
+            cpu: "4"
+            memory: 16Gi
             nvidia.com/gpu: "1"
           limits:
-            cpu: "2"
-            memory: 8Gi
+            cpu: "4"
+            memory: 16Gi
             nvidia.com/gpu: "1"
         readinessProbe:
-          exec:
-            command:
-            - /bin/sh
-            - -c
-            - "ollama list | grep -q qwen3.5"
+          httpGet:
+            path: /health
+            port: 8000
           initialDelaySeconds: 120
           periodSeconds: 15
           failureThreshold: 40
           timeoutSeconds: 5
         livenessProbe:
           httpGet:
-            path: /api/tags
-            port: 11434
-          initialDelaySeconds: 60
+            path: /health
+            port: 8000
+          initialDelaySeconds: 240
           periodSeconds: 15
           failureThreshold: 40
           timeoutSeconds: 5
         volumeMounts:
         - name: models
-          mountPath: /models-import
-          subPath: import
-        - name: models
-          mountPath: /ollama-models
-          subPath: registry
-        - name: modelfile
-          mountPath: /modelfile
+          mountPath: /models
       volumes:
       - name: models
         persistentVolumeClaim:
           claimName: ollama-models
-      - name: modelfile
-        configMap:
-          name: ollama-modelfile
