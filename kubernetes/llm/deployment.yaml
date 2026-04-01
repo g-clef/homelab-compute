@@ -101,7 +101,7 @@ spec:
         - "0.95"
         - --enforce-eager
         - --limit-mm-per-prompt
-        - image=0
+        - '{"image": 0}'
         - --served-model-name
         - qwen3.5
         ports:
