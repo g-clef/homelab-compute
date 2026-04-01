@@ -25,9 +25,9 @@ spec:
         - containerPort: 8080
           name: http
         env:
-        - name: OPENAI_API_BASE_URL
+        - name: OPENAI_API_BASE_URLS
           value: http://vllm.llm.svc.cluster.local:8000/v1
-        - name: OPENAI_API_KEY
+        - name: OPENAI_API_KEYS
           value: ignored
         resources:
           requests:
