@@ -8,6 +8,8 @@ metadata:
     argocd.argoproj.io/sync-wave: "1"
 data:
   settings.yml: |
+    use_default_settings: true
+
     general:
       debug: false
       instance_name: "SearXNG"
