@@ -1,0 +1,55 @@
+# kubernetes/llm/searxng-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: searxng
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: searxng
+  template:
+    metadata:
+      labels:
+        app: searxng
+    spec:
+      containers:
+      - name: searxng
+        image: searxng/searxng:2026.4.1-bab3879cb
+        ports:
+        - containerPort: 8080
+          name: http
+        volumeMounts:
+        - name: config
+          mountPath: /etc/searxng/settings.yml
+          subPath: settings.yml
+        resources:
+          requests:
+            cpu: "250m"
+            memory: 256Mi
+          limits:
+            cpu: "1"
+            memory: 512Mi
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 6
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          failureThreshold: 5
+      volumes:
+      - name: config
+        configMap:
+          name: searxng-config

@@ -1,0 +1,28 @@
+# kubernetes/llm/searxng-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: searxng-config
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+data:
+  settings.yml: |
+    general:
+      debug: false
+      instance_name: "SearXNG"
+
+    search:
+      safe_search: 0
+      formats:
+        - html
+        - json
+
+    server:
+      port: 8080
+      bind_address: "0.0.0.0"
+      secret_key: "asdfuiouoakn;sfavoiqqjvm9"
+      base_url: "http://searxng.llm.svc.cluster.local:8080"
+
+    ui:
+      static_use_hash: true
