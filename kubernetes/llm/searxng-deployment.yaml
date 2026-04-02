@@ -18,6 +18,7 @@ spec:
       labels:
         app: searxng
     spec:
+      enableServiceLinks: false
       containers:
       - name: searxng
         image: searxng/searxng:2026.4.1-bab3879cb
